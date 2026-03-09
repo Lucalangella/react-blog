@@ -2,6 +2,8 @@
 
 A modern, responsive static blog built with **React 18**, **React Router v6**, and **Tailwind CSS**.
 
+Admin has been split into a separate repository/app and is no longer exposed in this public site.
+
 ## Quick Start
 
 ```bash
@@ -47,7 +49,7 @@ src/
 - Previous/Next post navigation
 - Error boundary for graceful failure handling
 - SEO-friendly dynamic page titles
-- Gradient accent design system
+- Monochrome black/white visual theme
 
 ## Tech Stack
 

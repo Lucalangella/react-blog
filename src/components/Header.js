@@ -4,7 +4,6 @@ import { Link, useLocation } from 'react-router-dom';
 function Header() {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
 
   // Add background blur on scroll
   useEffect(() => {
@@ -17,9 +16,6 @@ function Header() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
-
-  // Don't render main header on admin pages (they have their own)
-  if (isAdminRoute) return null;
 
   return (
     <header
@@ -57,12 +53,6 @@ function Header() {
           >
             GitHub
           </a>
-          <Link
-            to="/admin"
-            className="px-5 py-2 bg-gray-900 text-white rounded-full text-xs font-bold hover:bg-black transition-colors shadow-sm"
-          >
-            Admin
-          </Link>
         </nav>
       </div>
     </header>
