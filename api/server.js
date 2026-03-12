@@ -5,13 +5,10 @@ const path = require('path');
 const crypto = require('crypto');
 
 const PORT = Number(process.env.PORT || 4000);
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '';
 const DATA_FILE = path.join(__dirname, 'data', 'posts.json');
 
 const app = express();
-const activeTokens = new Set();
 
 app.use(express.json({ limit: '1mb' }));
 app.use(
@@ -36,16 +33,6 @@ async function writePosts(posts) {
   await fs.writeFile(DATA_FILE, JSON.stringify(posts, null, 2) + '\n', 'utf8');
 }
 
-function requireAuth(req, res, next) {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-  if (!token || !activeTokens.has(token)) {
-    return res.status(401).json({ message: 'Unauthorized', code: 'UNAUTHORIZED' });
-  }
-  req.token = token;
-  return next();
-}
-
 function validatePost(payload) {
   const required = ['title', 'excerpt', 'content', 'author', 'date'];
   const fieldErrors = {};
@@ -67,31 +54,7 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/auth/login', (req, res) => {
-  const { email, password } = req.body || {};
-
-  if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
-    return res.status(401).json({ message: 'Invalid credentials', code: 'INVALID_CREDENTIALS' });
-  }
-
-  const accessToken = crypto.randomBytes(24).toString('hex');
-  activeTokens.add(accessToken);
-
-  return res.json({
-    accessToken,
-    user: {
-      email: ADMIN_EMAIL,
-      role: 'admin',
-    },
-  });
-});
-
-app.post('/auth/logout', requireAuth, (req, res) => {
-  activeTokens.delete(req.token);
-  res.status(204).send();
-});
-
-app.get('/posts', requireAuth, async (_req, res, next) => {
+app.get('/posts', async (_req, res, next) => {
   try {
     const posts = await readPosts();
     res.json(posts);
@@ -100,7 +63,7 @@ app.get('/posts', requireAuth, async (_req, res, next) => {
   }
 });
 
-app.get('/posts/:id', requireAuth, async (req, res, next) => {
+app.get('/posts/:id', async (req, res, next) => {
   try {
     const posts = await readPosts();
     const id = Number(req.params.id);
@@ -116,7 +79,7 @@ app.get('/posts/:id', requireAuth, async (req, res, next) => {
   }
 });
 
-app.post('/posts', requireAuth, async (req, res, next) => {
+app.post('/posts', async (req, res, next) => {
   try {
     const fieldErrors = validatePost(req.body);
     if (Object.keys(fieldErrors).length > 0) {
@@ -150,7 +113,7 @@ app.post('/posts', requireAuth, async (req, res, next) => {
   }
 });
 
-app.put('/posts/:id', requireAuth, async (req, res, next) => {
+app.put('/posts/:id', async (req, res, next) => {
   try {
     const fieldErrors = validatePost(req.body);
     if (Object.keys(fieldErrors).length > 0) {
@@ -185,7 +148,7 @@ app.put('/posts/:id', requireAuth, async (req, res, next) => {
   }
 });
 
-app.delete('/posts/:id', requireAuth, async (req, res, next) => {
+app.delete('/posts/:id', async (req, res, next) => {
   try {
     const posts = await readPosts();
     const id = Number(req.params.id);
@@ -209,5 +172,4 @@ app.use((error, _req, res, _next) => {
 
 app.listen(PORT, () => {
   console.log(`Local API running on http://localhost:${PORT}`);
-  console.log(`Admin login: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
 });
